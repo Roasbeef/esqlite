@@ -1,3 +1,25 @@
+# esqlite_loom
+
+This is Loom's maintained fork of [esqlite](https://github.com/mmzeeman/esqlite).
+The Hex package is `esqlite_loom`; its OTP application remains `esqlite` and
+its Erlang modules remain `esqlite3` and `esqlite3_nif`. Use one implementation
+of those modules in a release.
+
+Version 0.9.0 contains the private-query statement retirement fix submitted
+in [upstream PR #105](https://github.com/mmzeeman/esqlite/pull/105), at commit
+`45dbb48ce28c4d78b5cb93de0e1e78bb79f859d9`. Queries release the statements they
+own before returning, so closing a connection does not wait for garbage
+collection to retire those statements. Explicitly prepared statements keep
+their existing ownership contract. The SQLite amalgamation is unchanged.
+
+Rebar builds the native library from source. Install Erlang/OTP, Rebar3 and
+a C compiler. Gleam consumers use the `sqlight_loom` package, which selects
+this fork through Hex without requiring a patched Gleam compiler.
+
+The original esqlite documentation follows.
+
+---
+
 Esqlite ![Test](https://github.com/mmzeeman/esqlite/workflows/Test/badge.svg)
 =======
 
