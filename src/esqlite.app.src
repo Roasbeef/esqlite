@@ -1,14 +1,14 @@
 {application, esqlite,
  [
-  {description, "Loom fork of esqlite with deterministic private-query statement retirement"},
-  {vsn, "0.9.0"},
+  {description, "Loom SQLite binding with bounded read-only observation queries"},
+  {vsn, "0.9.1"},
   {pkg_name, "esqlite_loom"},
   {build_tools, ["rebar3"]},
   {modules, [esqlite3, esqlite3_nif]},
   {registered, []},
   {licenses, ["Apache-2.0"]},
   {links, [{"Github", "https://github.com/Roasbeef/esqlite"}]},
-  {files, ["src", "c_src/esqlite3_nif.c", "c_src/sqlite3/sqlite3.c", "c_src/sqlite3/sqlite3.h", "rebar.config.script", "rebar.lock", "Makefile", "README.md", "LICENSE", "test", "doc"]},
+  {files, ["src", "c_src/esqlite3_nif.c", "c_src/esqlite3_readonly.inc", "c_src/sqlite3/sqlite3.c", "c_src/sqlite3/sqlite3.h", "rebar.config.script", "rebar.lock", "Makefile", "README.md", "LICENSE", "test", "doc"]},
   {applications, [
                   kernel,
                   stdlib
