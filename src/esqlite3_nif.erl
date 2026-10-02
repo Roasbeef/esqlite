@@ -88,7 +88,10 @@ init() ->
     NifFileName = case code:priv_dir(esqlite) of
                       {error, bad_name} ->
                           case code:priv_dir(esqlite_loom) of
-                              {error, bad_name} -> filename:join("priv", NifName);
+                              %% Flattened satellite artifacts retain the fixed native
+                              %% library beside this module and never consult the cwd.
+                              {error, bad_name} ->
+                                  filename:join(filename:dirname(code:which(?MODULE)), NifName);
                               NativeDir -> filename:join(NativeDir, NifName)
                           end;
                       Dir -> filename:join(Dir, NifName)

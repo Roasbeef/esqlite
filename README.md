@@ -16,6 +16,13 @@ Rebar builds the native library from source. Install Erlang/OTP, Rebar3 and
 a C compiler. Gleam consumers use the `sqlight_loom` package, which selects
 this fork through Hex without requiring a patched Gleam compiler.
 
+The native loader uses the OTP application's `priv` directory in normal
+Rebar and Gleam builds. A flattened sandbox artifact may instead place the
+fixed `esqlite3_nif.so` library beside `esqlite3_nif.beam`; when no application
+directory exists, the loader resolves that module-relative path. It never
+searches the program's working directory. The artifact owner must include
+the native library's bytes in the artifact's integrity check.
+
 ## Bounded observation queries
 
 Version 0.9.1 adds `esqlite3:readonly_query/5` for a caller-owned `:memory:`
@@ -209,5 +216,3 @@ introspection into the internals. This release modernizes the
 integration. In some places the API is no longer compatible and
 will require small changes. In order to ease this process the 
 library now has typespecs, and the documentation was extended.
-
-
