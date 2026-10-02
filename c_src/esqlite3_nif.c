@@ -21,6 +21,7 @@
 #include <erl_nif.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include <sqlite3.h>
 
@@ -33,6 +34,7 @@ static ErlNifResourceType *esqlite3_backup_type = NULL;
 /* Database connection context */
 typedef struct {
     sqlite3 *db;
+    int private_memory;
 
     ErlNifPid update_hook_pid;
 } esqlite3;
@@ -236,10 +238,13 @@ esqlite_open(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 
      /* Open the database.
      */
+    conn->db = NULL;
+    conn->private_memory = !strcmp(filename, ":memory:");
     int rc = sqlite3_open(filename, &conn->db);
     if(rc != SQLITE_OK) {
         ERL_NIF_TERM error = make_sqlite3_error_tuple(env, rc);
         sqlite3_close_v2(conn->db);
+        conn->db = NULL;
         enif_release_resource(conn);
         return error;
     }
@@ -1208,10 +1213,14 @@ esqlite_status(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 /*
  * Load the nif. Initialize some stuff and such
  */
+#include "esqlite3_readonly.inc"
+
 static int
 on_load(ErlNifEnv* env, void** priv, ERL_NIF_TERM info)
 {
     ErlNifResourceType *rt;
+    readonly_heap_mutex = enif_mutex_create("esqlite3_readonly_heap");
+    if(!readonly_heap_mutex) return -1;
 
     rt = enif_open_resource_type(env, "esqlite3_nif", "esqlite3_type", destruct_esqlite3,
             ERL_NIF_RT_CREATE, NULL);
@@ -1246,6 +1255,8 @@ static int on_upgrade(ErlNifEnv* env, void** priv, void** old_priv_data, ERL_NIF
 }
 
 static ErlNifFunc nif_funcs[] = {
+    {"sandbox_heap_limit", 0, esqlite_sandbox_heap_limit},
+    {"readonly_query", 5, esqlite_readonly_query, ERL_NIF_DIRTY_JOB_CPU_BOUND},
     {"open", 1, esqlite_open, ERL_NIF_DIRTY_JOB_IO_BOUND},
     {"close", 1, esqlite_close, ERL_NIF_DIRTY_JOB_IO_BOUND},
 

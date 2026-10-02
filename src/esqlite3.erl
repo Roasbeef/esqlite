@@ -19,6 +19,9 @@
 
 %% higher-level export
 -export([
+    sandbox_heap_limit/0,
+    readonly_query/5,
+    finalize/1,
     open/1,
     close/1,
 
@@ -563,3 +566,25 @@ props_to_prepare_flag(Props) ->
         false -> Flag
     end.
 
+
+%% @doc Lower the satellite-wide SQLite heap ceiling to 32 MiB, never raise it.
+%% Call this before opening or loading any private observation database.
+-spec sandbox_heap_limit() -> ok | {error, {atom(), binary()}}.
+sandbox_heap_limit() ->
+    esqlite3_nif:sandbox_heap_limit().
+
+%% @doc Execute one SELECT with SQLite authorization and finite native budgets.
+%% The caller exclusively owns this :memory: connection and the trusted table
+%% allowlist. Raw connection access must not be exposed to untrusted callers.
+%% The returned cells preserve SQLite types: null, integer, real, and text.
+-spec readonly_query(esqlite3(), binary(), list(), [binary()], map()) ->
+    {ok, {[binary()], [[null | {integer, integer()} | {real, float()} | {text, binary()}]]}}
+    | {error, {atom(), binary()}}.
+readonly_query(#esqlite3{db=Db}, Sql, Params, AllowedTables, Limits) ->
+    esqlite3_nif:readonly_query(Db, Sql, Params, AllowedTables, Limits).
+
+%% @doc Finalize a caller-owned statement synchronously, including failed seeds.
+%% The statement must not be shared or used again after this ownership release.
+-spec finalize(esqlite3_stmt()) -> ok.
+finalize(#esqlite3_stmt{stmt=Statement}) ->
+    esqlite3_nif:finalize_query_statement(Statement).

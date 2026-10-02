@@ -21,6 +21,8 @@
 
 %% low-level exports
 -export([
+    sandbox_heap_limit/0,
+    readonly_query/5,
     open/1,
     close/1,
     error_info/1,
@@ -84,7 +86,14 @@
 init() ->
     NifName = "esqlite3_nif",
     NifFileName = case code:priv_dir(esqlite) of
-                      {error, bad_name} -> filename:join("priv", NifName);
+                      {error, bad_name} ->
+                          case code:priv_dir(esqlite_loom) of
+                              %% Flattened satellite artifacts retain the fixed native
+                              %% library beside this module and never consult the cwd.
+                              {error, bad_name} ->
+                                  filename:join(filename:dirname(code:which(?MODULE)), NifName);
+                              NativeDir -> filename:join(NativeDir, NifName)
+                          end;
                       Dir -> filename:join(Dir, NifName)
                   end,
     ok = erlang:load_nif(NifFileName, 0).
@@ -322,4 +331,12 @@ memory_stats(_Flag) ->
       HighwaterResetFlag :: integer(),
       Stats :: #{ used := non_neg_integer(), highwater := non_neg_integer() }.
 status(_Op, _Flag) ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%% @doc Lower the process-global SQLite heap ceiling before satellite loading.
+sandbox_heap_limit() ->
+    erlang:nif_error(nif_library_not_loaded).
+
+%% @doc Execute one bounded query on a caller-owned private memory database.
+readonly_query(_Connection, _Sql, _Params, _AllowedTables, _Limits) ->
     erlang:nif_error(nif_library_not_loaded).
